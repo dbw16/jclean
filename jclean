@@ -1,0 +1,52 @@
+#! /usr/local/bin/python3
+import sys
+# Warning this is not the smartest thing in the world, its just for a little help
+
+if len(sys.argv) != 2:
+    print("Error: Wrong number of arguments given")
+    exit(1)
+
+file_path = sys.argv[1]
+spaces = "    "
+
+def write_to_file(string: str, path:str):
+    with open(path, "w") as f:
+        f.write(string)
+
+
+def read_in_file(path: str):
+    with open(path) as f:
+        string = f.read()
+    return string
+
+def main():
+    string = read_in_file(file_path)
+    string = string.replace("} ", "\n}")
+    lines = string.splitlines()
+    built_lines = []
+    line_array = []
+    count_open = 0
+    for  line in lines:
+        striped = line.strip()
+        for i, char in enumerate(striped):
+            if char == "{":
+                count_open += 1
+                line_array.append(char)
+                built_lines.append("".join(line_array))
+                line_array = [spaces * count_open]
+            elif char == "}":
+                count_open -= 1
+                built_lines.append("".join(line_array))
+                built_lines.append(spaces * count_open +"}")
+                line_array = [spaces * count_open]
+            elif i == len(striped) - 1:
+                line_array.append(char)
+                built_lines.append("".join(line_array))
+                line_array = [spaces * count_open]
+            elif char != "{":
+                line_array.append(char)
+
+    new_string = "\n".join([line for line in built_lines if line.strip()])
+    write_to_file(new_string, file_path)
+if __name__ == '__main__':
+    main()
