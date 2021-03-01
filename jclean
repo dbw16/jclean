@@ -1,15 +1,16 @@
 #! /usr/local/bin/python3
-import sys
 # Warning this is not the smartest thing in the world, its just for a little help
+import argparse
 
-if len(sys.argv) != 2:
-    print("Error: Wrong number of arguments given")
-    exit(1)
+parser = argparse.ArgumentParser(description='Clean up a Jenkinsfile')
+parser.add_argument('file', metavar='file_path', type=str, nargs=1)
+parser.add_argument('-f', help='Force jclean to try format file', action='store_true')
+args = parser.parse_args()
 
-file_path = sys.argv[1]
-spaces = "    "
+SPACES = "    "
 
-def write_to_file(string: str, path:str):
+
+def write_to_file(string: str, path: str):
     with open(path, "w") as f:
         f.write(string)
 
@@ -19,34 +20,47 @@ def read_in_file(path: str):
         string = f.read()
     return string
 
+
 def main():
-    string = read_in_file(file_path)
+    # First make sure their is the same number of opening brackets as closing
+    string = read_in_file(args.file[0])
     string = string.replace("} ", "\n}")
     lines = string.splitlines()
     built_lines = []
     line_array = []
     count_open = 0
-    for  line in lines:
+    for line in lines:
         striped = line.strip()
         for i, char in enumerate(striped):
             if char == "{":
                 count_open += 1
                 line_array.append(char)
                 built_lines.append("".join(line_array))
-                line_array = [spaces * count_open]
+                line_array = [SPACES * count_open]
             elif char == "}":
                 count_open -= 1
                 built_lines.append("".join(line_array))
-                built_lines.append(spaces * count_open +"}")
-                line_array = [spaces * count_open]
+                built_lines.append(SPACES * count_open + "}")
+                line_array = [SPACES * count_open]
             elif i == len(striped) - 1:
                 line_array.append(char)
                 built_lines.append("".join(line_array))
-                line_array = [spaces * count_open]
+                line_array = [SPACES * count_open]
             elif char != "{":
                 line_array.append(char)
 
+    if not args.f:
+        force_option = "to force jclean to try format run with flag -f"
+        if count_open > 0:
+            print(F"error: {count_open} more opening brackets then closing, {force_option}")
+            exit(1)
+        elif count_open < 0:
+            print(F"error: {count_open} more closing brackets then opening, {force_option}")
+            exit(1)
+
     new_string = "\n".join([line for line in built_lines if line.strip()])
-    write_to_file(new_string, file_path)
+    write_to_file(new_string, args.file[0])
+
+
 if __name__ == '__main__':
     main()
